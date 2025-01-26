@@ -3,35 +3,35 @@
 // const token = process.env.TELEGRAM_BOT_TOKEN;
 // const chatId = process.env.TELEGRAM_GROUP_CHAT_ID;
 //
-// // Log environment variables to check if they are loaded correctly
-// console.log('Environment Variables:', { token, chatId });
-//
 // if (!token || !chatId) {
 //   console.error('Error: Missing environment variables. Ensure TELEGRAM_BOT_TOKEN and TELEGRAM_GROUP_CHAT_ID are set.');
 //   process.exit(1);
 // }
 //
-// // Initialize the bot
-// const bot = new TelegramBot(token, { polling: true });
+// const bot = new TelegramBot(token);
 //
-// // Function to send the timestamp message
-// const sendTimestampMessage = () => {
-//   const timestamp = new Date().toLocaleString(); // Get the current timestamp
-//   const message = `Current Timestamp: ${timestamp}`;
-//   console.log('Sending message:', message); // Log the message being sent
+// // Function to send the daily message
+// const sendDailyMessage = async () => {
+//   const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' }); // Get current time in Sri Lanka
+//   const message = `🌅 Good evening! Current time in Sri Lanka: ${timestamp}`;
+//   console.log('Sending message:', message);
 //
-//   bot.sendMessage(chatId, message)
-//       .then(() => console.log('Message sent successfully!'))
-//       .catch((error) => console.error('Error sending message:', error));
+//   try {
+//     await bot.sendMessage(chatId, message);
+//     console.log('Message sent successfully!');
+//   } catch (error) {
+//     console.error('Error sending message:', error);
+//   }
 // };
 //
-// sendTimestampMessage();
-// // Set up an interval to send a timestamp message every minute
-// // setInterval(sendTimestampMessage, 60000);
-//
-// console.log('Bot is running and will send a timestamp every minute...');
+// // The function triggered by the cron job
+// export default async function handler(req, res) {
+//   await sendDailyMessage();
+//   res.status(200).json({ status: 'Daily message sent successfully' });
+// }
 
 import TelegramBot from 'node-telegram-bot-api';
+import axios from 'axios';
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const chatId = process.env.TELEGRAM_GROUP_CHAT_ID;
@@ -43,14 +43,59 @@ if (!token || !chatId) {
 
 const bot = new TelegramBot(token);
 
+// Websites to check
+const websites = [
+  { url: 'https://kenexclusive.com', name: 'Kensxclusive (without www)', group: 'kenexclusive' },
+  { url: 'https://www.kenexclusive.com', name: 'Kensxclusive (with www)', group: 'kenexclusive' },
+  { url: 'https://gangawata.lk', name: 'Gangawata (without www)', group: 'gangawata' },
+  { url: 'https://www.gangawata.lk', name: 'Gangawata (with www)', group: 'gangawata' },
+];
+
+// Function to check website status
+const checkWebsitesStatus = async () => {
+  const results = [];
+  for (const site of websites) {
+    try {
+      const response = await axios.get(site.url, { timeout: 5000 });
+      results.push({
+        name: site.name,
+        url: site.url,
+        group: site.group,
+        status: response.status === 200 ? '🟢 Online' : '🔴 Offline',
+        https: site.url.startsWith('https://') ? '✅ Secure (HTTPS)' : '❌ Not Secure',
+      });
+    } catch (error) {
+      results.push({
+        name: site.name,
+        url: site.url,
+        group: site.group,
+        status: '🔴 Offline',
+        https: site.url.startsWith('https://') ? '✅ Secure (HTTPS)' : '❌ Not Secure',
+      });
+    }
+  }
+  return results;
+};
+
+// Function to generate the daily report message
+const generateReportMessage = async () => {
+  const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' });
+  const results = await checkWebsitesStatus();
+
+  let message = `🌅 Good evening! Current time in Sri Lanka: ${timestamp}\n\n📊 **Website Status Report:**\n`;
+  for (const result of results) {
+    message += `\n📍 **${result.name}** (${result.group})\n🔗 URL: ${result.url}\n📡 Status: ${result.status}\n🔒 HTTPS: ${result.https}\n`;
+  }
+  return message;
+};
+
 // Function to send the daily message
 const sendDailyMessage = async () => {
-  const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' }); // Get current time in Sri Lanka
-  const message = `🌅 Good evening! Current time in Sri Lanka: ${timestamp}`;
-  console.log('Sending message:', message);
-
   try {
-    await bot.sendMessage(chatId, message);
+    const reportMessage = await generateReportMessage();
+    console.log('Sending message:\n', reportMessage);
+
+    await bot.sendMessage(chatId, reportMessage, { parse_mode: 'Markdown' });
     console.log('Message sent successfully!');
   } catch (error) {
     console.error('Error sending message:', error);
@@ -65,46 +110,3 @@ export default async function handler(req, res) {
 
 
 
-// import { checkWebsiteStatus } from '../bot';  // Import the status check function
-//
-// export default async function handler(req, res) {
-//   if (req.method === 'POST') {
-//     const update = req.body;  // The update sent by Telegram
-//     const chatId = update.message.chat.id;
-//
-//     // Retrieve the bot token from environment variables
-//     const botToken = process.env.TELEGRAM_BOT_TOKEN;
-//
-//     if (!botToken) {
-//       return res.status(500).send('Telegram bot token is missing!');
-//     }
-//
-//     // Check if the message is a command (/webcheck)
-//     if (update.message.text === '/webcheck') {
-//       const statusMessage = await checkWebsiteStatus();
-//
-//       // Send the website status message to the user
-//       const response = await fetch(
-//           `https://api.telegram.org/bot${botToken}/sendMessage`,
-//           {
-//             method: 'POST',
-//             headers: { 'Content-Type': 'application/json' },
-//             body: JSON.stringify({
-//               chat_id: chatId,
-//               text: statusMessage,
-//             }),
-//           }
-//       );
-//
-//       if (response.ok) {
-//         res.status(200).send('Message sent to user');
-//       } else {
-//         res.status(500).send('Failed to send message');
-//       }
-//     } else {
-//       res.status(200).send('OK'); // Handle other types of messages
-//     }
-//   } else {
-//     res.status(405).send('Method Not Allowed');
-//   }
-// }
