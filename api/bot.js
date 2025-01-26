@@ -1,27 +1,32 @@
-import { checkWebsiteStatus } from '../../bot';  // Import the status check function
+import { checkWebsiteStatus } from '../bot';  // Import the status check function
 
 export default async function handler(req, res) {
-
   if (req.method === 'POST') {
     const update = req.body;  // The update sent by Telegram
     const chatId = update.message.chat.id;
-    const token = process.env.TELEGRAM_BOT_TOKEN;
+
+    // Retrieve the bot token from environment variables
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+
+    if (!botToken) {
+      return res.status(500).send('Telegram bot token is missing!');
+    }
 
     // Check if the message is a command (/webcheck)
     if (update.message.text === '/webcheck') {
       const statusMessage = await checkWebsiteStatus();
-      
+
       // Send the website status message to the user
       const response = await fetch(
-       `https://api.telegram.org/bot${botToken}/sendMessage`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: chatId,
-            text: statusMessage,
-          }),
-        }
+          `https://api.telegram.org/bot${botToken}/sendMessage`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: statusMessage,
+            }),
+          }
       );
 
       if (response.ok) {

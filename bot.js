@@ -1,12 +1,12 @@
-import TelegramBot from 'node-telegram-bot-api';
 import fetch from 'node-fetch';
 
-// Set up Telegram bot
-const token = process.env.TELEGRAM_BOT_TOKEN;
-const bot = new TelegramBot(token);
-
-// Set the webhook (replace with your deployed Vercel URL)
-bot.setWebHook('https://telegram-9d8h3mvqx-gajindubandaras-projects.vercel.app/api/bot');
+// Define the websites to monitor
+const websites = [
+  { url: 'https://kenexclusive.com', name: 'Kensxclusive (without www)', group: 'kenexclusive' },
+  { url: 'https://www.kenexclusive.com', name: 'Kensxclusive (with www)', group: 'kenexclusive' },
+  { url: 'https://gangawata.lk', name: 'Gangawata (without www)', group: 'gangawata' },
+  { url: 'https://www.gangawata.lk', name: 'Gangawata (with www)', group: 'gangawata' },
+];
 
 // Function to check website status
 const checkWebsiteStatus = async () => {
@@ -16,18 +16,13 @@ const checkWebsiteStatus = async () => {
     gangawata: { base: '', www: '' },
   };
 
-  // Define the websites to monitor
-  const websites = [
-    { url: 'https://kenexclusive.com', name: 'Kensxclusive (without www)', group: 'kenexclusive' },
-    { url: 'https://www.kenexclusive.com', name: 'Kensxclusive (with www)', group: 'kenexclusive' },
-    { url: 'https://gangawata.lk', name: 'Gangawata (without www)', group: 'gangawata' },
-    { url: 'https://www.gangawata.lk', name: 'Gangawata (with www)', group: 'gangawata' },
-  ];
-
   // Loop through each site to check its status
   for (let site of websites) {
     try {
+      // Fetch the website
       const response = await fetch(site.url);
+
+      // Categorize by base or www
       const siteCategory = site.url.includes('www') ? 'www' : 'base';
 
       if (!response.ok) {
@@ -65,4 +60,37 @@ const checkWebsiteStatus = async () => {
   return message;
 };
 
-export { checkWebsiteStatus };
+// Function to send status update to Telegram
+const sendStatusToTelegram = async (statusMessage) => {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID; // The chat ID where you want to send the updates
+
+  if (!botToken || !chatId) {
+    console.error('Bot token or chat ID is missing!');
+    return;
+  }
+
+  // Send the status message to Telegram
+  const response = await fetch(
+      `https://api.telegram.org/bot${botToken}/sendMessage`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: statusMessage,
+        }),
+      }
+  );
+
+  if (!response.ok) {
+    console.error('Failed to send status update');
+  }
+};
+
+// Set up an interval to send website status every 2 minutes
+setInterval(async () => {
+  const statusMessage = await checkWebsiteStatus();
+  await sendStatusToTelegram(statusMessage);
+}, 2 * 60 * 1000); // 2 minutes in milliseconds
+
