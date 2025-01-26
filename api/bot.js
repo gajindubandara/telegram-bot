@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
   try {
     const timestamp = new Date().toLocaleString(); // Get the current timestamp
-    const message = `Current Timestamp: ${timestamp}`;
+    const message = `Hello! Current Timestamp: ${timestamp}`;
 
     console.log('Sending message:', message); // Log the message
 
