@@ -97,7 +97,7 @@ const generateStatusReport = async () => {
 const sendDailyReport = async () => {
   const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' });
   const statusReport = await generateStatusReport();
-  const message = `🌅 Good evening! Current time in Sri Lanka: ${timestamp}\n\n${statusReport}`;
+  const message = `${statusReport}`;
 
   try {
     await bot.sendMessage(chatId, message, { parse_mode: 'Markdown', disable_web_page_preview: true });
