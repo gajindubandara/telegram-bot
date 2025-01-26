@@ -2,7 +2,8 @@ import TelegramBot from 'node-telegram-bot-api';
 import fetch from 'node-fetch';
 
 // Set up Telegram bot
-const token = '7270596191:AAHuoAOUC6HVFkMyicUgSzMeGiqOGLEXzdE';
+const token = process.env.TELEGRAM_BOT_TOKEN;
+// Make sure to keep your token secure
 const bot = new TelegramBot(token, { polling: true });
 
 // Define the websites to monitor
@@ -21,13 +22,10 @@ const checkWebsiteStatus = async () => {
     gangawata: { base: '', www: '' },
   };
 
-  // Loop through each site to check its status
   for (let site of websites) {
     try {
-      // Fetch the website
       const response = await fetch(site.url);
 
-      // Categorize by base or www
       const siteCategory = site.url.includes('www') ? 'www' : 'base';
 
       if (!response.ok) {
@@ -41,7 +39,6 @@ const checkWebsiteStatus = async () => {
     }
   }
 
-  // Format message by grouping
   if (groupedStatuses.kenexclusive.base || groupedStatuses.kenexclusive.www) {
     message += `🔹 *Kenexclusive*\n`;
     if (groupedStatuses.kenexclusive.base) {
@@ -65,21 +62,12 @@ const checkWebsiteStatus = async () => {
   return message;
 };
 
-// Listen for the "/webcheck" command
-bot.onText(/\/webcheck/, async (msg) => {
-  const chatId = msg.chat.id;
-
-  // Call the function to check website statuses
-  const statusMessage = await checkWebsiteStatus();
-
-  // Send the status message to the group in plain text (no markdown)
-  bot.sendMessage(chatId, statusMessage);
-});
-
-// Handle errors in the bot itself
-bot.on('polling_error', (error) => {
-  console.log(error.code);  // Logs the error code
-  bot.sendMessage(123456789, `⚠️ Error: ${error.message}`);
-});
-
-console.log('Bot is running...');
+// Vercel requires an export of the handler function
+export default async function handler(req, res) {
+  if (req.method === 'GET') {
+    const statusMessage = await checkWebsiteStatus();
+    res.status(200).send(statusMessage); // Send the status message to Vercel
+  } else {
+    res.status(405).send({ message: 'Method Not Allowed' });
+  }
+}
