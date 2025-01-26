@@ -25,8 +25,9 @@ const sendTimestampMessage = () => {
       .catch((error) => console.error('Error sending message:', error));
 };
 
+sendTimestampMessage();
 // Set up an interval to send a timestamp message every minute
-setInterval(sendTimestampMessage, 60000);
+// setInterval(sendTimestampMessage, 60000);
 
 console.log('Bot is running and will send a timestamp every minute...');
 
