@@ -45,30 +45,36 @@ const bot = new TelegramBot(token);
 
 // Websites to check
 const websites = [
-  { url: 'https://kenexclusive.com', name: 'Kensxclusive (without www)', group: 'kenexclusive' },
-  { url: 'https://www.kenexclusive.com', name: 'Kensxclusive (with www)', group: 'kenexclusive' },
-  { url: 'https://gangawata.lk', name: 'Gangawata (without www)', group: 'gangawata' },
-  { url: 'https://www.gangawata.lk', name: 'Gangawata (with www)', group: 'gangawata' },
+  { url: 'https://kenexclusive.com', name: 'Kensxclusive', group: 'kenexclusive' },
+  { url: 'https://www.kenexclusive.com', name: 'Kensxclusive', group: 'kenexclusive' },
+  { url: 'https://www.projects.kenexclusive.com', name: 'Kensxclusive', group: 'kenexclusive' },
+  { url: 'https://projects.kenexclusive.com', name: 'Kensxclusive', group: 'kenexclusive' },
+  { url: 'https://www.admin.kenexclusive.com', name: 'Kensxclusive', group: 'kenexclusive' },
+  { url: 'https://admin.kenexclusive.com', name: 'Kensxclusive', group: 'kenexclusive' },
+  { url: 'https://gangawata.lk', name: 'Gangawata', group: 'gangawata' },
+  { url: 'https://www.gangawata.lk', name: 'Gangawata', group: 'gangawata' },
 ];
 
 // Function to check website status
 const checkWebsitesStatus = async () => {
-  const results = [];
+  const results = {};
   for (const site of websites) {
     try {
       const response = await axios.get(site.url, { timeout: 5000 });
-      results.push({
-        name: site.name,
+      if (!results[site.name]) {
+        results[site.name] = [];
+      }
+      results[site.name].push({
         url: site.url,
-        group: site.group,
         status: response.status === 200 ? '🟢 Online' : '🔴 Offline',
         https: site.url.startsWith('https://') ? '✅ Secure (HTTPS)' : '❌ Not Secure',
       });
     } catch (error) {
-      results.push({
-        name: site.name,
+      if (!results[site.name]) {
+        results[site.name] = [];
+      }
+      results[site.name].push({
         url: site.url,
-        group: site.group,
         status: '🔴 Offline',
         https: site.url.startsWith('https://') ? '✅ Secure (HTTPS)' : '❌ Not Secure',
       });
@@ -77,14 +83,17 @@ const checkWebsitesStatus = async () => {
   return results;
 };
 
-// Function to generate the daily report message
+// Function to generate the simplified report message
 const generateReportMessage = async () => {
   const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' });
   const results = await checkWebsitesStatus();
 
   let message = `🌅 Good evening! Current time in Sri Lanka: ${timestamp}\n\n📊 **Website Status Report:**\n`;
-  for (const result of results) {
-    message += `\n📍 **${result.name}** (${result.group})\n🔗 URL: ${result.url}\n📡 Status: ${result.status}\n🔒 HTTPS: ${result.https}\n`;
+  for (const [name, entries] of Object.entries(results)) {
+    message += `\n📍 **${name}**\n`;
+    for (const entry of entries) {
+      message += `🔗 URL: ${entry.url}\n📡 Status: ${entry.status}\n🔒 HTTPS: ${entry.https}\n`;
+    }
   }
   return message;
 };
@@ -107,6 +116,5 @@ export default async function handler(req, res) {
   await sendDailyMessage();
   res.status(200).json({ status: 'Daily message sent successfully' });
 }
-
 
 
