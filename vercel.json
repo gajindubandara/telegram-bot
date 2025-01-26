@@ -11,5 +11,11 @@
       "src": "/api/bot",
       "dest": "/api/bot.js"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/timestamp",
+      "schedule": "*/1 * * * *"
+    }
   ]
 }
