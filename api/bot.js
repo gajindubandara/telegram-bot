@@ -56,55 +56,51 @@ const websites = [
 ];
 
 // Function to check website status
-const checkWebsitesStatus = async () => {
-  const results = {};
-  for (const site of websites) {
-    try {
-      const response = await axios.get(site.url, { timeout: 5000 });
-      if (!results[site.name]) {
-        results[site.name] = [];
-      }
-      results[site.name].push({
-        url: site.url,
-        status: response.status === 200 ? '🟢 Online' : '🔴 Offline',
-        https: site.url.startsWith('https://') ? '✅ Secure (HTTPS)' : '❌ Not Secure',
-      });
-    } catch (error) {
-      if (!results[site.name]) {
-        results[site.name] = [];
-      }
-      results[site.name].push({
-        url: site.url,
-        status: '🔴 Offline',
-        https: site.url.startsWith('https://') ? '✅ Secure (HTTPS)' : '❌ Not Secure',
-      });
-    }
-  }
-  return results;
-};
-
-// Function to generate the simplified report message
-const generateReportMessage = async () => {
-  const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' });
-  const results = await checkWebsitesStatus();
-
-  let message = `🌅 Good evening! Current time in Sri Lanka: ${timestamp}\n\n📊 **Website Status Report:**\n`;
-  for (const [name, entries] of Object.entries(results)) {
-    message += `\n📍 **${name}**\n`;
-    for (const entry of entries) {
-      message += `🔗 URL: ${entry.url}\n📡 Status: ${entry.status}\n🔒 HTTPS: ${entry.https}\n`;
-    }
-  }
-  return message;
-};
-
-// Function to send the daily message
-const sendDailyMessage = async () => {
+const checkWebsiteStatus = async (url) => {
   try {
-    const reportMessage = await generateReportMessage();
-    console.log('Sending message:\n', reportMessage);
+    const response = await axios.get(url);
+    return {
+      status: response.status === 200 ? '🟢 Online' : '🔴 Offline',
+      https: url.startsWith('https'),
+    };
+  } catch (error) {
+    return {
+      status: '🔴 Offline',
+      https: url.startsWith('https'),
+    };
+  }
+};
 
-    await bot.sendMessage(chatId, reportMessage, { parse_mode: 'Markdown' });
+// Function to generate the website status report
+const generateStatusReport = async () => {
+  let message = '📊 **Website Status Report:**\n\n';
+  const groupedReports = {};
+
+  for (const site of websites) {
+    const result = await checkWebsiteStatus(site.url);
+    if (!groupedReports[site.group]) {
+      groupedReports[site.group] = [];
+    }
+    groupedReports[site.group].push(
+        `🔗 URL: ${site.url}\n📡 Status: ${result.status}\n🔒 HTTPS: ${result.https ? '✅ Secure (HTTPS)' : '❌ Not Secure'}`
+    );
+  }
+
+  for (const group in groupedReports) {
+    message += `📍 **${group.charAt(0).toUpperCase() + group.slice(1)}**\n${groupedReports[group].join('\n')}\n\n`;
+  }
+
+  return message.trim();
+};
+
+// Function to send the daily report
+const sendDailyReport = async () => {
+  const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Colombo' });
+  const statusReport = await generateStatusReport();
+  const message = `🌅 Good evening! Current time in Sri Lanka: ${timestamp}\n\n${statusReport}`;
+
+  try {
+    await bot.sendMessage(chatId, message, { parse_mode: 'Markdown', disable_web_page_preview: true });
     console.log('Message sent successfully!');
   } catch (error) {
     console.error('Error sending message:', error);
@@ -113,8 +109,7 @@ const sendDailyMessage = async () => {
 
 // The function triggered by the cron job
 export default async function handler(req, res) {
-  await sendDailyMessage();
+  await sendDailyReport();
   res.status(200).json({ status: 'Daily message sent successfully' });
 }
-
 
