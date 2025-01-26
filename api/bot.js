@@ -31,6 +31,7 @@ setInterval(sendTimestampMessage, 60000);
 console.log('Bot is running and will send a timestamp every minute...');
 
 
+
 // import { checkWebsiteStatus } from '../bot';  // Import the status check function
 //
 // export default async function handler(req, res) {
