@@ -96,12 +96,14 @@ const bot = new TelegramBot(token);
 
 // Websites to check
 const websites = [
+  { url: 'https://gtwolabs.com', name: 'G2Labs', group: 'g2Labs' },
+  { url: 'https://www.gtwolabs.com', name: 'G2Labs', group: 'g2Labs' },
   { url: 'https://kenexclusive.com', name: 'Kenexclusive', group: 'kenexclusive' },
   { url: 'https://www.kenexclusive.com', name: 'Kenexclusive', group: 'kenexclusive' },
-  { url: 'https://projects.kenexclusive.com', name: 'Kenexclusive', group: 'kenexclusive' },
-  { url: 'https://www.projects.kenexclusive.com', name: 'Kenexclusive', group: 'kenexclusive' },
-  { url: 'http://admin.kenexclusive.com', name: 'Kenexclusive', group: 'kenexclusive' },
-  { url: 'http://www.admin.kenexclusive.com', name: 'Kenexclusive', group: 'kenexclusive' },
+  // { url: 'https://projects.kenexclusive.com', name: 'Kenexclusive', group: 'kenexclusive' },
+  // { url: 'https://www.projects.kenexclusive.com', name: 'Kenexclusive', group: 'kenexclusive' },
+  // { url: 'https://admin.kenexclusive.com', name: 'Kenexclusive', group: 'kenexclusive' },
+  // { url: 'https://www.admin.kenexclusive.com', name: 'Kenexclusive', group: 'kenexclusive' },
   { url: 'https://gangawata.lk', name: 'Gangawata', group: 'gangawata' },
   { url: 'https://www.gangawata.lk', name: 'Gangawata', group: 'gangawata' },
 ];
